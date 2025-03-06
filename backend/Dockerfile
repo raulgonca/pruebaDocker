@@ -23,22 +23,17 @@ WORKDIR /var/www/html
 # Copy composer files first to leverage Docker cache
 COPY composer.json composer.lock ./
 
+# Copy .env file
+COPY .env ./
+RUN chmod 644 .env
+
 # Install dependencies
 RUN composer install --no-scripts --no-autoloader --no-dev
 
 # Copy the rest of the application
-COPY --chown=www-data:www-data . .
+COPY . .
 
-# Generate autoloader and run scripts
-RUN composer dump-autoload --optimize \
-    && composer run-script post-install-cmd
-
-# Install additional dependencies
-RUN composer require symfony/orm-pack doctrine/doctrine-bundle \
-    && composer require doctrine/dbal \
-    && composer require nelmio/cors-bundle
-
-# Set permissions
+# Set permissions for specific directories
 RUN chmod -R 755 /var/www/html/public \
     && chmod -R 777 /var/www/html/var
 
