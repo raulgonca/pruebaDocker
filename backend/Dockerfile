@@ -20,6 +20,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
+# Cambiar permisos antes de ejecutar Composer
+RUN chown -R root:root /var/www/html && chmod -R 777 /var/www/html
+
 # Copy composer files first to leverage Docker cache
 COPY composer.json composer.lock ./
 
@@ -27,11 +30,14 @@ COPY composer.json composer.lock ./
 COPY .env ./
 RUN chmod 644 .env
 
-# Install dependencies
-RUN composer install --no-scripts --no-autoloader --no-dev
+# Install dependencies como root
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-scripts --no-autoloader --no-dev
 
-# Copy the rest of the application
+# Copiar el resto de la aplicación
 COPY . .
+
+# Restaurar permisos adecuados después de la instalación
+RUN chown -R www-data:www-data /var/www/html && chmod -R 775 /var/www/html
 
 # Set permissions for specific directories
 RUN chmod -R 755 /var/www/html/public \
